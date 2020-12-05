@@ -27,30 +27,43 @@ Begin
 End
 */
 
-class nodo_arbol_huffman {
-
-
-public:
+struct nodo_arbol_huffman {
     char valor;
-    nodo_arbol_huffman* hijo_i;
-    nodo_arbol_huffman* hijo_d;
+    std::shared_ptr<nodo_arbol_huffman>  hijo_i;
+    std::shared_ptr<nodo_arbol_huffman>  hijo_d;
+
     nodo_arbol_huffman(char valor) {
         this->valor = valor;
         this->hijo_i = NULL;
         this->hijo_d = NULL;
     }
+
+    void prt() {
+        std::cout << "'" << this->valor << "'";
+        if (this->hijo_i == NULL)
+        {
+            std::cout << "  i:" << this->hijo_i;
+        }
+        if (this->hijo_i == NULL)
+        {
+            std::cout << ", d:" << this->hijo_d;
+        }
+        std::cout << std::endl;
+    }
 };
 
 class Arbol_huffman {
 
-    // arbol
-    nodo_arbol_huffman* raiz;
-
-    // tendencia de cada carater
-    std::map<char, int> tendencia;
+    // nodo inicial del arbol
+    std::shared_ptr<nodo_arbol_huffman> raiz;
 
 public:
     Arbol_huffman(std::string cadena) {
+
+        this->raiz = NULL;
+
+        // tendencia de cada carater
+        std::map<char, int> tendencia;
 
         std::cout << cadena << std::endl;
 
@@ -67,32 +80,24 @@ public:
                   }
             );
 
-        // crear el primer nodo del arbol
-        this->raiz= new nodo_arbol_huffman(elems.begin()->first);
+        // std::queue<nodo_arbol_huffman*>
 
-        elems.erase(elems.begin());
+        // TODO: los apuntadores dentro del queue no estan apuntando a los elementos originales fuera del queue
+        std::queue<std::shared_ptr<nodo_arbol_huffman>>
+            pointer_q;
 
-        std::queue<nodo_arbol_huffman*> ptrs;
-
-        ptrs.push(this->raiz->hijo_i);
-        ptrs.push(this->raiz->hijo_d);
+        pointer_q.push(this->raiz);
 
         std::cout << &this->raiz << std::endl;
 
-        for (std::pair<char, int> p : elems) {
-            std::cout << p.first << " " << p.second << std::endl;
-            // aqui agregar los valores de manera organizada al arbol
-            nodo_arbol_huffman nah(p.first);
-            ptrs.front();
-            std::cout << &nah << " -> " << &nah.hijo_i << " " << &nah.hijo_d << std::endl;
-            ptrs.push(nah.hijo_i);
-            ptrs.push(nah.hijo_d);
+        for(std::pair<char, int> p : elems) {
+            std::shared_ptr<nodo_arbol_huffman> nah = pointer_q.front();
+            nodo_arbol_huffman nn(p.first);
+            nah = std::make_shared<nodo_arbol_huffman>(nn);
 
-            nodo_arbol_huffman* pnah = ptrs.front();
-            std::cout<< &ptrs.front() << std::endl;
-            std::cout<< &pnah << std::endl;
-            pnah = &nah;
-            ptrs.pop();
+            pointer_q.push(nah->hijo_i);
+            pointer_q.push(nah->hijo_d);
+            pointer_q.pop();
         }
     }
 
@@ -101,8 +106,8 @@ public:
         _recorrerPre(this->raiz);
     }
 
-    void _recorrerPre(nodo_arbol_huffman* nah) {
-        std::cout<< nah->valor << std::endl;
+    void _recorrerPre(std::shared_ptr<nodo_arbol_huffman> nah) {
+        nah->prt();
 
         if (nah->hijo_i != NULL)
             _recorrerPre(nah->hijo_i);
@@ -110,11 +115,11 @@ public:
             _recorrerPre(nah->hijo_d);
     }
 
-    void prtTendencia () {
-        for (std::pair<char, int> p : tendencia) {
-            std::cout << "'" << p.first << "' " << p.second << std::endl;
-        }
-    }
+    // void prtTendencia () {
+    //     for (std::pair<char, int> p : tendencia) {
+    //         std::cout << "'" << p.first << "' " << p.second << std::endl;
+    //     }
+    // }
 
 };
 
@@ -123,9 +128,10 @@ using std::cout;
 int main() {
     std::string cadenas[] = {
         "hola que hace",
-        "algÈÞesoµ½esto×"
-
+        // "algÈÞesoµ½esto×"
     };
+
+    // std::cout << sizeof(char) << std::endl;
 
     for (std::string c : cadenas)
     {
