@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <queue>
+// #include <boost/dynamic_bitset.hpp>
 
 /*
 Begin
@@ -27,42 +28,34 @@ Begin
 End
 */
 
-struct nodo_arbol_huffman {
+class nodo_arbol_huffman {
+public:
     char valor;
     std::shared_ptr<nodo_arbol_huffman>  hijo_i;
     std::shared_ptr<nodo_arbol_huffman>  hijo_d;
+	std::string codigo;
+
+    nodo_arbol_huffman() {}
 
     nodo_arbol_huffman(char valor) {
         this->valor = valor;
-        this->hijo_i = NULL;
-        this->hijo_d = NULL;
     }
 
     void prt() {
         std::cout << "'" << this->valor << "'";
-        if (this->hijo_i == NULL)
-        {
-            std::cout << "  i:" << this->hijo_i;
-        }
-        if (this->hijo_i == NULL)
-        {
-            std::cout << ", d:" << this->hijo_d;
-        }
-        std::cout << std::endl;
+		std::cout << std::endl;
     }
 };
 
 class Arbol_huffman {
 
     // nodo inicial del arbol
-    std::shared_ptr<nodo_arbol_huffman> raiz;
+	std::shared_ptr<nodo_arbol_huffman> raiz;
 
 public:
     Arbol_huffman(std::string cadena) {
 
-        this->raiz = NULL;
-
-        // tendencia de cada carater
+        // tendencia de cada caracter
         std::map<char, int> tendencia;
 
         std::cout << cadena << std::endl;
@@ -80,63 +73,120 @@ public:
                   }
             );
 
-        // std::queue<nodo_arbol_huffman*>
+        std::queue<std::shared_ptr<nodo_arbol_huffman>> pointer_q;
 
-        // TODO: los apuntadores dentro del queue no estan apuntando a los elementos originales fuera del queue
-        std::queue<std::shared_ptr<nodo_arbol_huffman>>
-            pointer_q;
-
+		this->raiz = std::make_shared<nodo_arbol_huffman>();
         pointer_q.push(this->raiz);
 
-        std::cout << &this->raiz << std::endl;
-
+		// TODO: agregar los codigos o crear una funcion para que los consiga
         for(std::pair<char, int> p : elems) {
+
             std::shared_ptr<nodo_arbol_huffman> nah = pointer_q.front();
-            nodo_arbol_huffman nn(p.first);
-            nah = std::make_shared<nodo_arbol_huffman>(nn);
+				// = std::make_shared<nodo_arbol_huffman>();
+
+            *nah = nodo_arbol_huffman(p.first);
+
+			// TODO: esto se deberia crear de otra forma, para evitar que queden datos vacios
+            nah->hijo_i = std::make_shared<nodo_arbol_huffman>();
+            nah->hijo_d = std::make_shared<nodo_arbol_huffman>();
 
             pointer_q.push(nah->hijo_i);
             pointer_q.push(nah->hijo_d);
             pointer_q.pop();
         }
+
+		// TODO: de momento se estan limpiando los valores que hayan quedado vacios
+		// quitar esto cuando se arregle lo otro
+		limpiar();
     }
 
-    void recorrerPre() {
-        std::cout<< this->raiz->valor << std::endl;
-        _recorrerPre(this->raiz);
+	void limpiar() {
+		_limpiar(this->raiz);
+	}
+
+	void _limpiar(std::shared_ptr<nodo_arbol_huffman> nah) {
+        if (nah->hijo_i != NULL) {
+			if(nah->hijo_i->valor == 0) {
+				nah->hijo_i = nullptr;
+			} else {
+				_limpiar(nah->hijo_i);
+			}
+		}
+        if (nah->hijo_d != NULL) {
+			if(nah->hijo_d->valor == 0) {
+				nah->hijo_d = nullptr;
+			} else {
+				_limpiar(nah->hijo_d);
+			}
+		}
+	}
+
+    void imprimirPreOrden() {
+        _imprimirPreOrden(std::shared_ptr<nodo_arbol_huffman>(this->raiz), 0);
     }
 
-    void _recorrerPre(std::shared_ptr<nodo_arbol_huffman> nah) {
+    void _imprimirPreOrden(std::shared_ptr<nodo_arbol_huffman> nah, int depth) {
+
+		for (int a = 0 ; a < depth ; a++) {
+			std::cout << "|  ";
+		}
         nah->prt();
 
         if (nah->hijo_i != NULL)
-            _recorrerPre(nah->hijo_i);
+            _imprimirPreOrden(nah->hijo_i, depth + 1);
         if (nah->hijo_d != NULL)
-            _recorrerPre(nah->hijo_d);
+            _imprimirPreOrden(nah->hijo_d, depth + 1);
     }
 
-    // void prtTendencia () {
-    //     for (std::pair<char, int> p : tendencia) {
-    //         std::cout << "'" << p.first << "' " << p.second << std::endl;
-    //     }
-    // }
+	std::vector<bool> comprimir(std::string cadena) {
+		std::vector<bool> bits;
 
+		for(char c : cadena) {
+
+		}
+
+		return bits;
+	}
 };
 
 using std::cout;
 
+void prueba () {
+
+	std::queue<std::shared_ptr<nodo_arbol_huffman>> q;
+
+	std::shared_ptr<nodo_arbol_huffman> raiz = std::make_shared<nodo_arbol_huffman>();
+
+	// raiz = new nodo_arbol_huffman('1');
+
+	q.push(raiz);
+	std::shared_ptr<nodo_arbol_huffman> rr = q.front() ;
+
+	*rr = nodo_arbol_huffman('1');
+
+	std::cout << "raiz  \t:" << raiz << std::endl;
+	raiz->prt();
+
+}
+
 int main() {
-    std::string cadenas[] = {
-        "hola que hace",
-        // "algÈÞesoµ½esto×"
+
+	// prueba(); return 0;
+
+	std::string cadenas[] = {
+        "hola que hace"
+        // , "algÈÞesoµ½esto×"
     };
 
     // std::cout << sizeof(char) << std::endl;
 
+	std::cout << sizeof(new nodo_arbol_huffman(0)) << std::endl;
+
     for (std::string c : cadenas)
     {
+		std::cout<< c << std::endl;
         Arbol_huffman ah(c);
-        ah.recorrerPre();
+        ah.imprimirPreOrden();
         // ah.prtTendencia();
         cout << std::endl << std::endl;
     }
