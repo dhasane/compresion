@@ -33,24 +33,40 @@ public:
     char valor;
     std::shared_ptr<nodo_arbol_huffman>  hijo_i;
     std::shared_ptr<nodo_arbol_huffman>  hijo_d;
-	std::string codigo;
+	int tendencia;
 
-    nodo_arbol_huffman() {}
-
-    nodo_arbol_huffman(char valor) {
+    nodo_arbol_huffman(char valor, int tendencia) {
         this->valor = valor;
-    }
+		this->tendencia = tendencia;
+		this->hijo_i = nullptr;
+		this->hijo_d = nullptr;
+	}
+
+    nodo_arbol_huffman(nodo_arbol_huffman &nah1, nodo_arbol_huffman &nah2) {
+        this->valor = 0;
+		this->tendencia = nah1.tendencia + nah2.tendencia;
+		this->hijo_i = std::make_shared<nodo_arbol_huffman>(nah1);
+		this->hijo_d = std::make_shared<nodo_arbol_huffman>(nah2);
+	}
 
     void prt() {
-        std::cout << "'" << this->valor << "'";
-		std::cout << std::endl;
+        std::cout << "'" << this->valor << "' :" << this->tendencia << std::endl;
     }
+
+	friend bool operator>(const nodo_arbol_huffman &nah, const nodo_arbol_huffman &nah2) {
+		return nah.tendencia > nah2.tendencia;
+	}
+
+	friend bool operator<(const nodo_arbol_huffman &nah, const nodo_arbol_huffman &nah2) {
+		return nah.tendencia < nah2.tendencia;
+	}
 };
 
 class Arbol_huffman {
 
     // nodo inicial del arbol
 	std::shared_ptr<nodo_arbol_huffman> raiz;
+    std::map<char, std::string> simbolos;
 
 public:
     Arbol_huffman(std::string cadena) {
@@ -58,70 +74,80 @@ public:
         // tendencia de cada caracter
         std::map<char, int> tendencia;
 
-        std::cout << cadena << std::endl;
 
         for (char c : cadena) {
             tendencia[c] ? tendencia[c]++ : tendencia[c] = 1;
         }
 
-        std::vector<std::pair<char, int>> elems(tendencia.begin(), tendencia.end());
+		std::priority_queue<
+			nodo_arbol_huffman,
+			std::vector<nodo_arbol_huffman>,
+			std::greater< nodo_arbol_huffman>> cp ;
 
-        std::sort(elems.begin(), elems.end(),
-                  [](std::pair<char, int> elem1,
-                     std::pair<char, int> elem2) {
-                    return elem1.second > elem2.second;
-                  }
-            );
+		for (std::pair<char, int> v : tendencia) {
+			cp.push(nodo_arbol_huffman(v.first, v.second));
+		}
 
-        std::queue<std::shared_ptr<nodo_arbol_huffman>> pointer_q;
+		while (cp.size() > 1) {
+			nodo_arbol_huffman nah = cp.top();
+			cp.pop();
+			nodo_arbol_huffman nah2 = cp.top();
+			cp.pop();
+			cp.push(nodo_arbol_huffman(nah, nah2));
+		}
 
-		this->raiz = std::make_shared<nodo_arbol_huffman>();
-        pointer_q.push(this->raiz);
+		nodo_arbol_huffman nah = cp.top();
+		cp.pop();
 
-		// TODO: agregar los codigos o crear una funcion para que los consiga
-        for(std::pair<char, int> p : elems) {
-
-            std::shared_ptr<nodo_arbol_huffman> nah = pointer_q.front();
-				// = std::make_shared<nodo_arbol_huffman>();
-
-            *nah = nodo_arbol_huffman(p.first);
-
-			// TODO: esto se deberia crear de otra forma, para evitar que queden datos vacios
-            nah->hijo_i = std::make_shared<nodo_arbol_huffman>();
-            nah->hijo_d = std::make_shared<nodo_arbol_huffman>();
-
-            pointer_q.push(nah->hijo_i);
-            pointer_q.push(nah->hijo_d);
-            pointer_q.pop();
-        }
-
-		// TODO: de momento se estan limpiando los valores que hayan quedado vacios
-		// quitar esto cuando se arregle lo otro
-		limpiar();
+		this->raiz = std::make_shared<nodo_arbol_huffman>(nah);
     }
 
-	void limpiar() {
-		_limpiar(this->raiz);
+	void conseguirCodigos() {
+		_conseguirCodigos(this->raiz, "0");
 	}
 
-	void _limpiar(std::shared_ptr<nodo_arbol_huffman> nah) {
+	void _conseguirCodigos(std::shared_ptr<nodo_arbol_huffman> nah, std::string codigo) {
+        this->simbolos[nah->valor] = codigo;
         if (nah->hijo_i != NULL) {
-			if(nah->hijo_i->valor == 0) {
-				nah->hijo_i = nullptr;
-			} else {
-				_limpiar(nah->hijo_i);
-			}
+			_conseguirCodigos(nah->hijo_i, codigo + "1");
 		}
         if (nah->hijo_d != NULL) {
-			if(nah->hijo_d->valor == 0) {
-				nah->hijo_d = nullptr;
-			} else {
-				_limpiar(nah->hijo_d);
-			}
+			_conseguirCodigos(nah->hijo_d, codigo + "0");
 		}
 	}
 
-    void imprimirPreOrden() {
+	std::string descomprimir(std::string codigo) {
+		if (codigo[0] == '0')
+		{
+			return _descomprimir(this->raiz, codigo.substr(1));
+		}
+
+		return "";
+	}
+
+	std::string _descomprimir(std::shared_ptr<nodo_arbol_huffman> nah,
+					   std::string codigo) {
+		std::string respuesta = "";
+		respuesta += nah->valor;
+
+		if (codigo[0] == '1'){
+			if (nah->hijo_i != NULL) {
+				respuesta = _descomprimir(nah->hijo_i, codigo.substr(1));
+			} else {
+				respuesta = nah->valor;
+			}
+		} else {
+			if (nah->hijo_d != NULL) {
+				respuesta = _descomprimir(nah->hijo_d, codigo.substr(1));
+			} else {
+				respuesta = nah->valor;
+			}
+		}
+
+		return respuesta;
+	}
+
+	void imprimirPreOrden() {
         _imprimirPreOrden(std::shared_ptr<nodo_arbol_huffman>(this->raiz), 0);
     }
 
@@ -138,36 +164,27 @@ public:
             _imprimirPreOrden(nah->hijo_d, depth + 1);
     }
 
-	std::vector<bool> comprimir(std::string cadena) {
-		std::vector<bool> bits;
+	// std::vector<bool>
+	std::string comprimir(std::string cadena) {
+		std::string ret = "";
 
 		for(char c : cadena) {
-
+			ret += this->simbolos[c];
 		}
 
-		return bits;
+		int faltante = ret.length() % 8;
+
+		for(int a = 0 ; a < faltante ; a++)
+		{
+			ret += "0";
+		}
+
+		//return bits;
+		return ret;
 	}
 };
 
 using std::cout;
-
-void prueba () {
-
-	std::queue<std::shared_ptr<nodo_arbol_huffman>> q;
-
-	std::shared_ptr<nodo_arbol_huffman> raiz = std::make_shared<nodo_arbol_huffman>();
-
-	// raiz = new nodo_arbol_huffman('1');
-
-	q.push(raiz);
-	std::shared_ptr<nodo_arbol_huffman> rr = q.front() ;
-
-	*rr = nodo_arbol_huffman('1');
-
-	std::cout << "raiz  \t:" << raiz << std::endl;
-	raiz->prt();
-
-}
 
 int main() {
 
@@ -178,15 +195,17 @@ int main() {
         // , "algÈÞesoµ½esto×"
     };
 
-    // std::cout << sizeof(char) << std::endl;
-
-	std::cout << sizeof(new nodo_arbol_huffman(0)) << std::endl;
-
     for (std::string c : cadenas)
     {
-		std::cout<< c << std::endl;
+        std::cout << c << std::endl;
         Arbol_huffman ah(c);
         ah.imprimirPreOrden();
+
+		// std::string bla = ah.comprimir(c);
+		// std::cout << bla << std::endl;
+		// std::cout << bla.length()% 8 << std::endl;
+
+		// std::cout << "   >" << ah.descomprimir(bla) << "<" << std::endl;
         // ah.prtTendencia();
         cout << std::endl << std::endl;
     }
