@@ -103,7 +103,12 @@ public:
     }
 
 	void conseguirCodigos() {
-		_conseguirCodigos(this->raiz, "0");
+		_conseguirCodigos(this->raiz, "1");
+
+		for (std::pair<char, std::string> v : this->simbolos) {
+			std::cout << v.first << "->" << v.second << std::endl;
+		}
+
 	}
 
 	void _conseguirCodigos(std::shared_ptr<nodo_arbol_huffman> nah, std::string codigo) {
@@ -117,28 +122,38 @@ public:
 	}
 
 	std::string descomprimir(std::string codigo) {
-		if (codigo[0] == '0')
+		std::string desc = "";
+		int posicion = 0;
+		while(codigo.length() > posicion && codigo[posicion] != '0')
 		{
-			return _descomprimir(this->raiz, codigo.substr(1));
+			posicion ++;
+			desc += _descomprimir(
+				this->raiz,
+				codigo.substr(posicion),
+				posicion
+				);
 		}
 
-		return "";
+		return desc;
 	}
 
-	std::string _descomprimir(std::shared_ptr<nodo_arbol_huffman> nah,
-					   std::string codigo) {
-		std::string respuesta = "";
-		respuesta += nah->valor;
+	char _descomprimir(std::shared_ptr<nodo_arbol_huffman> nah,
+					   std::string codigo,
+					   int &posicion
+		) {
+		char respuesta = 0;
 
 		if (codigo[0] == '1'){
 			if (nah->hijo_i != NULL) {
-				respuesta = _descomprimir(nah->hijo_i, codigo.substr(1));
+				posicion ++;
+				respuesta = _descomprimir(nah->hijo_i, codigo.substr(1), posicion);
 			} else {
 				respuesta = nah->valor;
 			}
 		} else {
 			if (nah->hijo_d != NULL) {
-				respuesta = _descomprimir(nah->hijo_d, codigo.substr(1));
+				posicion ++;
+				respuesta = _descomprimir(nah->hijo_d, codigo.substr(1), posicion);
 			} else {
 				respuesta = nah->valor;
 			}
@@ -164,8 +179,8 @@ public:
             _imprimirPreOrden(nah->hijo_d, depth + 1);
     }
 
-	// std::vector<bool>
 	std::string comprimir(std::string cadena) {
+		this->conseguirCodigos();
 		std::string ret = "";
 
 		for(char c : cadena) {
@@ -178,8 +193,6 @@ public:
 		{
 			ret += "0";
 		}
-
-		//return bits;
 		return ret;
 	}
 };
@@ -192,7 +205,8 @@ int main() {
 
 	std::string cadenas[] = {
         "hola que hace"
-        // , "algÈÞesoµ½esto×"
+        , "algÈÞesoµ½esto×"
+		, "abcdefghijklmnopqrstuvwxyz"
     };
 
     for (std::string c : cadenas)
@@ -201,11 +215,11 @@ int main() {
         Arbol_huffman ah(c);
         ah.imprimirPreOrden();
 
-		// std::string bla = ah.comprimir(c);
-		// std::cout << bla << std::endl;
+		std::string bla = ah.comprimir(c);
+		std::cout << bla << std::endl;
 		// std::cout << bla.length()% 8 << std::endl;
 
-		// std::cout << "   >" << ah.descomprimir(bla) << "<" << std::endl;
+		std::cout << "   >" << ah.descomprimir(bla) << "<" << std::endl;
         // ah.prtTendencia();
         cout << std::endl << std::endl;
     }
