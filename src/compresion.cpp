@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <queue>
+#include <bitset>
 // #include <boost/dynamic_bitset.hpp>
 
 /*
@@ -105,9 +106,9 @@ public:
 	void conseguirCodigos() {
 		_conseguirCodigos(this->raiz, "1");
 
-		for (std::pair<char, std::string> v : this->simbolos) {
-			std::cout << v.first << "->" << v.second << std::endl;
-		}
+		// for (std::pair<char, std::string> v : this->simbolos) {
+		// 	std::cout << v.first << "->" << v.second << std::endl;
+		// }
 
 	}
 
@@ -121,7 +122,13 @@ public:
 		}
 	}
 
-	std::string descomprimir(std::string codigo) {
+	std::string descomprimir(std::string binCodigo) {
+		std::string codigo = "";
+		for (char c : binCodigo)
+		{
+			std::bitset<8> btc(c);
+			codigo += btc.to_string();
+		}
 		std::string desc = "";
 		int posicion = 0;
 		while(codigo.length() > posicion && codigo[posicion] != '0')
@@ -181,17 +188,24 @@ public:
 
 	std::string comprimir(std::string cadena) {
 		this->conseguirCodigos();
+		std::string binString = "";
 		std::string ret = "";
 
 		for(char c : cadena) {
-			ret += this->simbolos[c];
+			binString += this->simbolos[c];
 		}
 
-		int faltante = ret.length() % 8;
+		int faltante = binString.length() % 8;
 
 		for(int a = 0 ; a < faltante ; a++)
 		{
-			ret += "0";
+			binString += "0";
+		}
+
+		for (int a = 0 ; a < binString.length() ; a+=8)
+		{
+			std::bitset<8> btc(binString.substr(a, a+8));
+			ret += (char)btc.to_ulong();
 		}
 		return ret;
 	}
@@ -213,13 +227,13 @@ int main() {
     {
         std::cout << c << std::endl;
         Arbol_huffman ah(c);
-        ah.imprimirPreOrden();
+        // ah.imprimirPreOrden();
 
 		std::string bla = ah.comprimir(c);
 		std::cout << bla << std::endl;
 		// std::cout << bla.length()% 8 << std::endl;
 
-		std::cout << "   >" << ah.descomprimir(bla) << "<" << std::endl;
+		std::cout << ">" << ah.descomprimir(bla) << "<" << std::endl;
         // ah.prtTendencia();
         cout << std::endl << std::endl;
     }
