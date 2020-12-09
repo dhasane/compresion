@@ -38,23 +38,23 @@ class Arbol_huffman {
 	std::shared_ptr<nodo_arbol_huffman> raiz;
     std::map<char, std::string> simbolos;
 
-public:
-    Arbol_huffman(std::string cadena);
-
-	void conseguirCodigos();
-
 	void _conseguirCodigos(std::shared_ptr<nodo_arbol_huffman> nah, std::string codigo);
-
-	std::string descomprimir(std::string binCodigo);
 
 	char _descomprimir(std::shared_ptr<nodo_arbol_huffman> nah,
 					   std::string codigo,
 					   int &posicion
 		);
 
-	void imprimirPreOrden();
-
     void _imprimirPreOrden(std::shared_ptr<nodo_arbol_huffman> nah, int depth);
+
+public:
+    Arbol_huffman(std::string cadena);
+
+	void conseguirCodigos();
+
+	std::string descomprimir(std::string binCodigo);
+
+	void imprimirPreOrden();
 
 	std::string comprimir(std::string cadena);
 };
