@@ -41,6 +41,10 @@ void nodo_arbol_huffman::prt() {
     std::cout << "'" << this->valor << "' :" << this->tendencia << std::endl;
 }
 
+Arbol_huffman::Arbol_huffman(std::map<char, int> tendencia) {
+    this->construirArbol(tendencia);
+}
+
 Arbol_huffman::Arbol_huffman(std::string cadena) {
 
     // tendencia de cada caracter
@@ -50,7 +54,12 @@ Arbol_huffman::Arbol_huffman(std::string cadena) {
         tendencia[c] ? tendencia[c]++ : tendencia[c] = 1;
     }
 
-    // cola de prioridad invertida, gaurda los valores de menor a mayor
+    this->construirArbol(tendencia);
+}
+
+void Arbol_huffman::construirArbol(std::map<char, int> tendencia) {
+
+    // cola de prioridad invertida, guarda los valores de menor a mayor
     std::priority_queue<nodo_arbol_huffman, std::vector<nodo_arbol_huffman>,
                         std::greater<nodo_arbol_huffman>>
         cp;

@@ -47,8 +47,11 @@ class Arbol_huffman {
 
     void _imprimirPreOrden(std::shared_ptr<nodo_arbol_huffman> nah, int depth);
 
+    void construirArbol(std::map<char, int> tendencia);
 public:
     Arbol_huffman(std::string cadena);
+
+    Arbol_huffman(std::map<char, int> tendencia);
 
 	void conseguirCodigos();
 
