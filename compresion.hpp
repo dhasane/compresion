@@ -1,4 +1,7 @@
 
+#ifndef __COMPRESION_HUFFMAN
+#define __COMPRESION_HUFFMAN
+
 #include <iostream>
 #include <map>
 #include <memory>
@@ -61,3 +64,6 @@ public:
 
 	std::string comprimir(std::string cadena);
 };
+
+
+#endif
