@@ -1,9 +1,8 @@
-
 #include "compresion.hpp"
 
 /*
 Begin
-   define a node with character, frequency, left and right child of the node for Huffman tree.
+   definir un nodo con caracter, frecuencia, e hijo izquierdo y derecho.
    create a list ‘freq’ to store frequency of each character, initially, all are 0
    for each character c in the string do
       increase the frequency for character ch in freq list.
@@ -22,6 +21,18 @@ Begin
 End
 */
 
+void sumarMapas(std::map<char, int> &map1, std::map<char, int> map2) {
+    for (std::pair<char, int> p: map2) {
+        // si ya existe lo suma, de lo contrario lo crea
+        map1[p.first] ? map1[p.first] += p.second : map1[p.first] = p.second ;
+    }
+}
+
+void imprimirMapa(std::map<char, int> &tendencia) {
+    for (std::pair<char, int> v : tendencia) {
+        std::cout << v.first << " -> " << v.second << std::endl;
+    }
+}
 
 nodo_arbol_huffman::nodo_arbol_huffman(char valor, int tendencia) {
     this->valor = valor;
@@ -41,7 +52,28 @@ void nodo_arbol_huffman::prt() {
     std::cout << "'" << this->valor << "' :" << this->tendencia << std::endl;
 }
 
-Arbol_huffman::Arbol_huffman(std::string cadena) {
+std::string nodo_arbol_huffman::toString() {
+    std::stringstream ss;
+    ss << "" << this->valor << ":" << this->tendencia;
+    return ss.str();
+}
+
+Arbol_huffman::Arbol_huffman() {
+    this->raiz = nullptr;
+}
+
+bool Arbol_huffman::vacio() {
+    return this->raiz == nullptr;
+}
+
+Arbol_huffman::Arbol_huffman(std::map<char, int> tendencia, std::string archivo) {
+    if (!archivo.empty()) {
+        sumarMapas(tendencia, Arbol_huffman::cargar(archivo));
+    }
+    this->construirArbol(tendencia);
+}
+
+Arbol_huffman::Arbol_huffman(std::string cadena, std::string archivo) {
 
     // tendencia de cada caracter
     std::map<char, int> tendencia;
@@ -49,8 +81,18 @@ Arbol_huffman::Arbol_huffman(std::string cadena) {
     for (char c : cadena) {
         tendencia[c] ? tendencia[c]++ : tendencia[c] = 1;
     }
+    if (!archivo.empty()) {
+        sumarMapas(tendencia, Arbol_huffman::cargar(archivo));
+    }
 
-    // cola de prioridad invertida, gaurda los valores de menor a mayor
+    this->construirArbol(tendencia);
+}
+
+void Arbol_huffman::construirArbol(std::map<char, int> tendencia) {
+
+    this->tendencias = tendencia;
+
+    // cola de prioridad invertida, guarda los valores de menor a mayor
     std::priority_queue<nodo_arbol_huffman, std::vector<nodo_arbol_huffman>,
                         std::greater<nodo_arbol_huffman>>
         cp;
@@ -67,18 +109,17 @@ Arbol_huffman::Arbol_huffman(std::string cadena) {
         cp.push(nodo_arbol_huffman(nah, nah2));
     }
 
-    nodo_arbol_huffman nah = cp.top();
-    cp.pop();
-
-    this->raiz = std::make_shared<nodo_arbol_huffman>(nah);
+    if (cp.size() != 0) {
+        nodo_arbol_huffman nah = cp.top();
+        cp.pop();
+        this->raiz = std::make_shared<nodo_arbol_huffman>(nah);
+    } else {
+        this->raiz = nullptr;
+    }
 }
 
 void Arbol_huffman::conseguirCodigos() {
     _conseguirCodigos(this->raiz, "1");
-
-    // for (std::pair<char, std::string> v : this->simbolos) {
-    // 	std::cout << v.first << "->" << v.second << std::endl;
-    // }
 }
 
 void Arbol_huffman::_conseguirCodigos(std::shared_ptr<nodo_arbol_huffman> nah,
@@ -94,12 +135,15 @@ void Arbol_huffman::_conseguirCodigos(std::shared_ptr<nodo_arbol_huffman> nah,
 
 std::string Arbol_huffman::descomprimir(std::string binCodigo) {
     std::string codigo = "";
+    // convertir cada caracter a su representacion binaria
     for (char c : binCodigo) {
         std::bitset<8> btc(c);
         codigo += btc.to_string();
     }
     std::string desc = "";
     int posicion = 0;
+    // cada caracter empieza con '1', por lo que hay que revisar que
+    // no se empiece con '0', ya que eso seria relleno para compretar el byte
     while (codigo.length() > posicion && codigo[posicion] != '0') {
         posicion++;
         desc += _descomprimir(this->raiz, codigo.substr(posicion), posicion);
@@ -158,7 +202,10 @@ std::string Arbol_huffman::comprimir(std::string cadena) {
         binString += this->simbolos[c];
     }
 
-    int faltante = binString.length() % 8;
+    // encontrar la cantidad de bits faltantes
+    // en caso de que binString.length() sea multiplo de 0
+    // dejar el resultado final en 0
+    int faltante = (8 - (binString.length() % 8)) % 8 ;
 
     for (int a = 0; a < faltante; a++) {
         binString += "0";
@@ -169,4 +216,74 @@ std::string Arbol_huffman::comprimir(std::string cadena) {
         ret += (char)btc.to_ulong();
     }
     return ret;
+}
+
+std::string Arbol_huffman::toString() {
+    if (this->raiz == nullptr )
+        return "";
+    return _toString(std::shared_ptr<nodo_arbol_huffman>(this->raiz));
+}
+
+std::string Arbol_huffman::_toString(std::shared_ptr<nodo_arbol_huffman> nah) {
+    return "(" +
+        nah->toString() +
+        (nah->hijo_i != NULL ? _toString(nah->hijo_i) : "") +
+        (nah->hijo_d != NULL ? _toString(nah->hijo_d) : "") +
+        ")";
+}
+
+std::map<char, int> Arbol_huffman::conseguirTendencias() {
+    return this->tendencias;
+}
+
+void Arbol_huffman::guardar(std::string nombre) {
+    std::ofstream archivo(nombre);
+
+    bool primer = true;
+
+    for (std::pair<char, int> t : this->tendencias) {
+        if (primer) {
+            primer = false;
+        } else {
+            archivo << SEPARADOR;
+            // archivo << std::endl;
+        }
+        archivo << t.first << ":" << t.second ;
+    }
+
+    archivo.close();
+}
+
+std::map<char, int> Arbol_huffman::cargar(std::string nombre) {
+    std::map<char, int> tendencia;
+    std::ifstream archivo(nombre);
+
+    std::string cadena;
+    char valor;
+
+    // contador de caracteres SEPARADOR
+    int contSep = 0;
+    while (archivo.get(valor)) {
+        cadena += valor;
+
+        if (valor == SEPARADOR[0]) {
+            contSep ++;
+
+            // al encontrar 2, se sabe que es un SEPARADOR
+            if (contSep == 2) {
+                tendencia[cadena[0]] = std::stoi(cadena.substr(2));
+                cadena = "";
+                contSep = 0;
+            }
+        } else {
+            contSep = 0;
+        }
+    }
+    if (!cadena.empty())
+    {
+        tendencia[cadena[0]] = std::stoi(cadena.substr(2));
+    }
+
+    archivo.close();
+    return tendencia;
 }

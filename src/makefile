@@ -8,7 +8,7 @@ EXENAME = comp
 todo: $(COMP).o
 	$(CC) -o $(EXENAME) $(COMP).o $(MAIN).cpp
 
-%.o: %.cpp
+%.o: %.c
 	$(CC) -c $@ $<
 
 clean:
